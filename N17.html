@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>N-17 第二章：回声</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;background:#030405;color:#cbd3d8;font-family:Consolas,"Microsoft YaHei",monospace}
+body{overflow:hidden}
+#app{height:100dvh;display:flex;flex-direction:column}
+header{height:52px;flex:none;display:flex;align-items:center;gap:10px;padding:0 13px;background:#080a0c;border-bottom:1px solid #273038}
+.dot{width:9px;height:9px;border-radius:50%;background:#a93636;box-shadow:0 0 13px #a93636}
+.title{font-weight:bold;font-size:13px;letter-spacing:1px}
+.status{margin-left:auto;font-size:10px;color:#66737b}
+#story{flex:1;overflow:auto;padding:14px 11px 10px;background:radial-gradient(circle at 50% 0,#12191d,#050708 58%);-webkit-overflow-scrolling:touch}
+.msg{max-width:850px;margin:0 auto 11px;padding:12px 13px;background:#090d10;border-left:2px solid #38464f;line-height:1.7;font-size:14px;overflow-wrap:anywhere}
+.msg.you{border-left-color:#687a84}
+.msg.friend{border-left-color:#7894a0}
+.msg.warn{border-left-color:#9d3737;color:#e39a9a}
+.msg.secret{border-left-color:#a89a50;color:#d9ce91}
+.time{font-size:10px;color:#56636b;margin-bottom:4px}
+.glitch{animation:g .12s infinite alternate}
+@keyframes g{from{text-shadow:1px 0 #833,-1px 0 #246}to{text-shadow:-1px 0 #833,1px 0 #246}}
+#actions{flex:none;background:#080a0c;border-top:1px solid #242c32;padding:7px 8px calc(7px + env(safe-area-inset-bottom));display:grid;grid-template-columns:1fr 1fr;gap:6px}
+button{font-family:inherit;color:#c4d0d6;background:#11181c;border:1px solid #344149;border-radius:8px;padding:11px 7px;min-height:43px;touch-action:manipulation}
+button:active{background:#202c32}
+button.locked{opacity:.3}
+#inputbar{flex:none;display:flex;gap:7px;padding:7px 8px;background:#07090a;border-top:1px solid #222a2f}
+#cmd{flex:1;min-width:0;background:#030405;border:1px solid #36434b;border-radius:8px;color:#e0e6e9;font:16px Consolas,"Microsoft YaHei",monospace;padding:12px;outline:0}
+#go{width:66px}
+#modal{position:fixed;inset:0;background:#000d;display:none;align-items:center;justify-content:center;padding:16px;z-index:5}
+.box{width:100%;max-width:560px;background:#080b0d;border:1px solid #3c4850;border-radius:12px;padding:19px;box-shadow:0 0 50px #000}
+.box h2{font-size:18px;margin:0 0 12px}
+.box p{line-height:1.65;font-size:13px}
+#answer{width:100%;padding:12px;border-radius:8px;background:#030405;border:1px solid #354149;color:#eee;font:16px Consolas,monospace;margin:6px 0 10px}
+.box button{width:100%;margin-top:6px}
+#meter{position:fixed;top:52px;left:0;height:2px;background:#9a3939;width:0;transition:.4s;z-index:4}
+@media(min-width:800px){
+ #story{padding:25px}
+ #actions{grid-template-columns:repeat(4,1fr);padding:10px 15%}
+}
+</style>
+</head>
+<body>
+<div id="app">
+<header>
+ <span class="dot"></span>
+ <span class="title">N-17 / CHAPTER 02 : 回声</span>
+ <span class="status" id="status">23:48 · NETWORK UNKNOWN</span>
+</header>
+<div id="meter"></div>
+
+<main id="story">
+ <div class="msg warn"><div class="time">23:48 · SYSTEM</div>⚠ 第一章记录已载入。<br>检测到未知设备正在尝试连接你的手机。</div>
+ <div class="msg you"><div class="time">23:49 · 你</div>谁？</div>
+ <div class="msg"><div class="time">23:49 · UNKNOWN</div><span class="glitch">不要关机。</span></div>
+ <div class="msg"><div class="time">23:49 · UNKNOWN</div>打开你手机里的 <b>N17_RECOVERY.mp4</b>。<br>这是你想知道的答案。</div>
+ <div class="msg warn"><div class="time">系统</div>文件来源：<b>本机摄像头</b><br>创建时间：<b>23:41:00</b></div>
+</main>
+
+<div id="actions">
+ <button id="b1" onclick="act('video')">▶ 播放录像</button>
+ <button id="b2" class="locked" onclick="act('frame')">查看第17帧</button>
+ <button id="b3" class="locked" onclick="act('location')">检查位置</button>
+ <button id="b4" class="locked" onclick="act('call')">接听未知来电</button>
+</div>
+<div id="inputbar">
+ <input id="cmd" autocomplete="off" placeholder="输入命令：播放 / 17 / 位置 / 接听">
+ <button id="go" onclick="run()">发送</button>
+</div>
+</div>
+
+<div id="modal">
+ <div class="box">
+  <h2 id="mtitle">未知文件</h2>
+  <p id="mtext"></p>
+  <input id="answer" placeholder="输入答案">
+  <button onclick="submitAnswer()">确认</button>
+  <button onclick="closeModal()">关闭</button>
+ </div>
+</div>
+
+<script>
+let stage=0, waiting=null;
+const story=document.getElementById('story'), cmd=document.getElementById('cmd');
+function add(t,c=''){
+ const d=document.createElement('div');d.className='msg '+c;d.innerHTML=t;story.appendChild(d);
+ story.scrollTop=story.scrollHeight;
+}
+function meter(){document.getElementById('meter').style.width=(stage/6*100)+'%'}
+function unlock(){
+ if(stage>=1)document.getElementById('b2').classList.remove('locked');
+ if(stage>=2)document.getElementById('b3').classList.remove('locked');
+ if(stage>=4)document.getElementById('b4').classList.remove('locked');
+ meter();
+}
+function run(){
+ const x=cmd.value.trim().toLowerCase();cmd.value='';
+ if(!x)return;
+ add('<div class="time">23:5'+stage+'</div>&gt; '+x,'you');
+ if(x.includes('播放')||x.includes('录像')){
+   act('video');return;
+ }
+ if(x==='17'||x.includes('第17帧')){act('frame');return}
+ if(x.includes('位置')){act('location');return}
+ if(x.includes('接听')||x.includes('来电')){act('call');return}
+ if(x.includes('门')||x.includes('密码')){answerDoor(x);return}
+ add('未知命令。可以尝试：<b>播放</b>、<b>17</b>、<b>位置</b>、<b>接听</b>。','warn');
+}
+function act(type){
+ if(type==='video'){
+  if(stage<1)stage=1;
+  add('<div class="time">N17_RECOVERY.mp4 · 00:00</div>录像画面是你的房间。<br>拍摄角度却在<b>你身后</b>。','secret');
+  add('<div class="time">00:07</div>画面里的你正在睡觉。<br><br>可是现在你明明坐在手机前。','warn');
+  setTimeout(()=>add('<div class="time">00:17</div><span class="glitch">录像中的你抬起了头。</span><br>它好像隔着屏幕看到了你。','warn'),700);
+  setTimeout(()=>add('视频结束。最后一帧出现：<b>17</b>。','secret'),1300);
+  unlock();return;
+ }
+ if(type==='frame'){
+  if(stage<1)return;
+  if(stage<2)stage=2;
+  add('<div class="time">FRAME 17</div>图像经过放大。<br><br>窗户外面站着一个人。<br>身高、衣服、姿势……<b>全部和你一样。</b>','secret');
+  add('你看向现实中的窗户。<br>窗外没有人。','you');
+  add('手机突然自动定位。','warn');
+  unlock();return;
+ }
+ if(type==='location'){
+  if(stage<2)return;
+  if(stage<3)stage=3;
+  add('<div class="time">LOCATION</div>GPS：<b>无法确定</b><br>网络位置：<b>与另一台设备重合</b><br>设备名称：<span class="glitch">LIANG-PC</span>','secret');
+  add('但你知道，LIANG 的电脑已经不存在很多年了。','you');
+  add('<b>未知号码正在呼叫……</b>','warn');
+  unlock();return;
+ }
+ if(type==='call'){
+  if(stage<3)return;
+  if(stage<4)stage=4;
+  add('<div class="time">UNKNOWN CALL · 23:56</div>你接通了。<br><br>没有声音。只有呼吸声。','warn');
+  setTimeout(()=>add('<div class="time">23:56:17</div><span class="glitch">“你终于找到第17帧了。”</span>','friend'),800);
+  setTimeout(()=>add('对方继续说：<br>“现在告诉我——门外是不是有人？”','secret'),1500);
+  setTimeout(()=>openModal('电话没有挂断。<br><br>门外传来三下敲门声。<br><br><b>咚。咚。咚。</b><br><br>电话里的声音说：“不要打开门。除非你知道它是谁。”','门外是谁'),2100);
+  unlock();return;
+ }
+}
+function openModal(text,ans){
+ waiting=ans;document.getElementById('mtitle').textContent='最后一道问题';
+ document.getElementById('mtext').innerHTML=text;
+ document.getElementById('answer').value='';
+ document.getElementById('modal').style.display='flex';
+ document.getElementById('answer').focus();
+}
+function closeModal(){waiting=null;document.getElementById('modal').style.display='none'}
+function submitAnswer(){
+ const a=document.getElementById('answer').value.trim();
+ if(waiting==='门外是谁'){
+   if(a==='LIANG'||a==='梁'||a.includes('liang')){
+    closeModal();stage=5;unlock();
+    add('<b class="glitch">答案正确。</b>','secret');
+    add('门外的敲门声停止了。<br><br>电话里的声音突然变成了你的声音：<br><span class="glitch">“谢谢你替我回答。”</span>','warn');
+    setTimeout(()=>finale(),1000);
+   }else{
+    document.getElementById('mtext').innerHTML='答案错误。<br><br>敲门声变成了<b>四下</b>。<br><br>咚。咚。咚。<b>咚。</b>';
+   }
+ }
+}
+function finale(){
+ stage=6;meter();
+ document.getElementById('status').textContent='23:59 · DEVICE COPIED';
+ add('<div class="time">23:59</div><b>手机文件系统发生变化。</b><br><br>新增文件：<br><b>/N17/CHAPTER_03/door_opened.log</b>','secret');
+ add('<div class="time">00:00</div><span class="glitch">你没有打开门。</span><br><br>但文件记录显示：<b>门已经打开了。</b>','warn');
+ setTimeout(()=>add('<span class="glitch">【第二章结束】</span><br><br>下一章：<b>N-17：门后</b>','secret'),900);
+}
+cmd.addEventListener('keydown',e=>{if(e.key==='Enter')run()});
+window.addEventListener('resize',()=>setTimeout(()=>story.scrollTop=story.scrollHeight,80));
+meter();
+</script>
+</body>
+</html>

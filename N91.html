@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>文件：N-17</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#050607;color:#c9d1d9;font-family:Consolas,"Microsoft YaHei",monospace;overflow:hidden}
+#app{height:100vh;display:flex;flex-direction:column}
+header{height:54px;background:#090b0d;border-bottom:1px solid #263038;display:flex;align-items:center;padding:0 18px;gap:12px}
+.dot{width:10px;height:10px;border-radius:50%;background:#d94b4b;box-shadow:0 0 12px #d94b4b}
+.title{letter-spacing:2px;font-weight:bold}
+.status{margin-left:auto;color:#65727c;font-size:12px}
+main{flex:1;display:grid;grid-template-columns:260px minmax(0,1fr) 280px;min-height:0}
+.panel{background:#080a0c;border-right:1px solid #222b31;overflow:auto}
+.panel:last-child{border-left:1px solid #222b31;border-right:0}
+h3{font-size:12px;color:#71808a;margin:0;padding:14px 16px;border-bottom:1px solid #20272d;letter-spacing:1px}
+.file{padding:13px 16px;border-bottom:1px solid #151b20;cursor:pointer}
+.file:hover,.file.active{background:#10161b}
+.file small{display:block;color:#59666f;margin-top:4px}
+#center{display:flex;flex-direction:column;min-width:0;min-height:0}
+#screen{flex:1;overflow:auto;padding:24px;background:radial-gradient(circle at 50% 0,#11181d 0,#07090b 55%);line-height:1.7;-webkit-overflow-scrolling:touch}
+.msg{max-width:800px;margin:0 auto 16px;padding:14px 16px;border-left:2px solid #39454d;background:#0a0d10;overflow-wrap:anywhere}
+.msg.friend{border-color:#6c8795}.msg.system{border-color:#8b3737;color:#e18b8b}.msg.secret{border-color:#a79b53;color:#d9cf91}
+.time{color:#4e5b63;font-size:11px;margin-bottom:5px}
+#inputbar{display:flex;gap:8px;border-top:1px solid #222b31;background:#080a0c;padding:8px}
+#cmd{flex:1;min-width:0;background:#050607;border:1px solid #34414a;border-radius:8px;outline:0;color:#d7dee3;padding:13px 12px;font:inherit}
+button{background:#11181d;color:#b9c7ce;border:1px solid #33414a;border-radius:8px;padding:11px 14px;font-family:inherit;cursor:pointer;touch-action:manipulation}
+button:hover{background:#172128}
+#actions{padding:12px;display:flex;gap:8px;flex-wrap:wrap}
+.action{width:100%;text-align:left;min-height:44px}
+.locked{opacity:.35;cursor:not-allowed}
+#progress{padding:14px 16px;color:#7b8a93;font-size:12px;line-height:1.8}
+.bar{height:5px;background:#182026;margin-top:8px}.fill{height:100%;width:0;background:#687f8c;transition:.4s}
+.overlay{position:fixed;inset:0;background:#000d;display:none;align-items:center;justify-content:center;z-index:9;padding:16px}
+.modal{width:min(650px,100%);background:#080a0c;border:1px solid #38444c;border-radius:12px;box-shadow:0 0 60px #000;padding:20px}
+.modal h2{margin-top:0;color:#d7dfe3}
+input{width:100%;background:#050607;border:1px solid #34414a;border-radius:8px;color:#d7dfe3;padding:13px;font:inherit;margin:10px 0 14px}
+.glitch{animation:glitch .12s infinite alternate}
+@media(max-width:760px){
+  body{overflow:hidden}
+  header{height:50px;padding:0 12px}
+  .title{font-size:13px}
+  .status{font-size:10px}
+  main{display:flex;flex-direction:column}
+  main>.panel:first-child{display:none}
+  #center{order:1;flex:1;min-height:0}
+  main>.panel:last-child{order:2;display:block;flex:none;border-left:0;border-top:1px solid #222b31;max-height:150px;overflow:auto}
+  main>.panel:last-child h3{display:none}
+  #actions{padding:7px;display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .action{min-height:42px;font-size:12px;padding:9px}
+  #progress{padding:5px 10px 8px;font-size:10px}
+  .bar{margin-top:4px}
+  #screen{padding:14px 11px 10px;font-size:14px}
+  .msg{padding:12px;margin-bottom:10px}
+  #inputbar{padding:7px;position:relative}
+  #cmd{font-size:16px;padding:12px}
+  #inputbar button{min-width:64px}
+}
+@media(max-width:430px){
+  .status{display:none}
+  .dot{width:8px;height:8px}
+  #actions{grid-template-columns:1fr 1fr}
+  .action{font-size:11px}
+  #screen{font-size:13px}
+}
+@keyframes glitch{from{transform:translateX(0)}to{transform:translateX(1px);text-shadow:2px 0 #9a3030,-2px 0 #305c9a}}
+@media(max-width:900px){main{grid-template-columns:1fr}.panel{display:none}#screen{padding:16px}}
+</style>
+</head>
+<body>
+<div id="app">
+<header><span class="dot"></span><span class="title">N-17 / LOCAL TERMINAL</span><span class="status" id="status">OFFLINE · 23:41</span></header>
+<main>
+<aside class="panel">
+<h3>文件浏览器</h3>
+<div class="file active" id="f1">friend_message.txt<small>来自：LIANG · 23:17</small></div>
+<div class="file" id="f2">project_N17.doc<small>权限：普通用户</small></div>
+<div class="file" id="f3">notes.tmp<small>损坏 / 未知编码</small></div>
+<div class="file" id="f4">government_archive.enc<small>加密 · 权限不足</small></div>
+<div class="file" id="f5">██████████.dat<small>未知文件</small></div>
+</aside>
+
+<section id="center">
+<div id="screen">
+<div class="msg friend"><div class="time">23:17 · LIANG</div>在吗？帮我改一下电脑里的 <b>project_N17.doc</b>。<br>很简单，把里面第17行的数字改成 <b>0417</b>。<br>改完告诉我。别打开其他文件。</div>
+<div class="msg"><div class="time">23:19 · 你</div>行。</div>
+<div class="msg friend"><div class="time">23:20 · LIANG</div>还有，<b>别联网</b>。我不是开玩笑。</div>
+<div class="msg system">终端提示：发现可编辑文件 <b>project_N17.doc</b>。输入 <b>打开17</b> 开始。</div>
+</div>
+<div id="inputbar"><input id="cmd" autocomplete="off" placeholder="输入命令，例如：打开17 / 编辑 / 0417 / 解密" /><button onclick="run()">执行</button></div>
+</section>
+
+<aside class="panel">
+<h3>可执行操作</h3>
+<div id="actions">
+<button class="action" onclick="quick('打开17')">打开 N-17 文件</button>
+<button class="action locked" id="decryptBtn" onclick="quick('解密')">尝试解密政府档案</button>
+<button class="action locked" id="searchBtn" onclick="quick('搜索')">搜索隐藏内容</button>
+<button class="action locked" id="alienBtn" onclick="quick('真相')">查看 N-17 真相</button>
+</div>
+<div id="progress">调查进度<div class="bar"><div class="fill" id="fill"></div></div><br><span id="ptext">0 / 5</span></div>
+</aside>
+</main>
+</div>
+
+<div class="overlay" id="modal">
+<div class="modal">
+<h2>⚠ 未知连接</h2>
+<p id="modalText"></p>
+<input id="answer" placeholder="输入答案">
+<button onclick="submitAnswer()">确认</button>
+<button onclick="closeModal()">取消</button>
+</div>
+</div>
+
+<script>
+let stage=0, waiting=null;
+const screen=document.getElementById('screen'), cmd=document.getElementById('cmd');
+function add(text,cls=''){
+ const d=document.createElement('div'); d.className='msg '+cls; d.innerHTML=text; screen.appendChild(d); screen.scrollTop=screen.scrollHeight;
+}
+function quick(x){cmd.value=x;run()}
+function progress(){document.getElementById('fill').style.width=(stage/5*100)+'%';document.getElementById('ptext').textContent=stage+' / 5'}
+function unlock(){
+ if(stage>=2)document.getElementById('decryptBtn').classList.remove('locked');
+ if(stage>=3)document.getElementById('searchBtn').classList.remove('locked');
+ if(stage>=4)document.getElementById('alienBtn').classList.remove('locked');
+ progress()
+}
+function run(){
+ let x=cmd.value.trim().toLowerCase(); cmd.value='';
+ if(!x)return;
+ add('<div class="time">23:'+(20+stage)+'</div>&gt; '+x);
+ if(x.includes('打开17')||x.includes('n17')){
+   if(stage<1)stage=1;
+   add('<div class="time">PROJECT_N17.DOC</div>文件内容：<br><br>17. <b>0417</b><br>18. 07-14-1998<br>19. “回收完成。”<br>20. <span class="glitch">不要让它知道你看见了。</span><br><br>文件末尾还有一串异常字符： <b>NE-0417-██</b>','secret');
+   add('你发现这不像普通项目文件。LIANG 为什么叫你只改第17行？');
+   unlock();return;
+ }
+ if(x==='编辑'||x==='0417'){
+   if(stage<2)stage=2;
+   add('保存成功。<br><span class="glitch">保存时间：23:23:41</span><br><br>警告：文件的修改时间早于你打开电脑的时间。','system');
+   add('<b>新消息 · LIANG</b><br>“你改了？……等等，你有没有看到文件最后面的东西？”','friend');
+   unlock();return;
+ }
+ if(x.includes('解密')){
+   if(stage<2){add('权限不足。先完成文件编辑。','system');return}
+   openModal('government_archive.enc 的密码提示：<br><br>“N-17不是项目编号。它是第17次……<br>密码由日期组成。”','0417');
+   return;
+ }
+ if(x.includes('0417')&&waiting){submitAnswer();return}
+ if(x.includes('搜索')){
+   if(stage<3){add('你还没有获得足够权限。','system');return}
+   if(stage<4)stage=4;
+   add('隐藏目录：<br><br><b>/N17/RECOVERY/</b><br>文件：<b>incident_0417.log</b><br><br>“目标并非来自地球。首次接触后，政府部门将其标记为‘非人类智能体’。”<br><br>附件图片无法读取，但文件名是： <span class="glitch">LOOKING_AT_YOU.jpg</span>','secret');
+   add('<b>系统：</b>你的摄像头指示灯刚刚亮了一下。','system');
+   unlock();return;
+ }
+ if(x.includes('真相')){
+   if(stage<4){add('权限不足。','system');return}
+   stage=5;unlock();
+   add('<b class="glitch">N-17 真相档案</b><br><br>1998年7月14日，一颗未知物体坠落。政府没有公开事故。<br>它没有驾驶员，但会模仿接触过它的人。<br><br>LIANG 的账号最后一次登录：<b>1998-07-14 23:41</b>。<br><br>你突然意识到：你今天收到的消息，来自一个已经不存在28年的账号。','secret');
+   setTimeout(()=>add('<b class="glitch">新消息 · LIANG</b><br>“谢谢你把文件打开了。”<br><br>“现在，它知道你在哪里了。”','system'),900);
+   setTimeout(()=>document.getElementById('status').textContent='ONLINE · UNKNOWN DEVICE',1700);
+   return;
+ }
+ add('未知命令。提示：打开17、编辑、解密、搜索、真相。','system');
+}
+function openModal(t,a){waiting=a;document.getElementById('modalText').innerHTML=t;document.getElementById('modal').style.display='flex';document.getElementById('answer').focus()}
+function closeModal(){waiting=null;document.getElementById('modal').style.display='none'}
+function submitAnswer(){
+ let a=document.getElementById('answer').value.trim();
+ if(!waiting)return;
+ if(a===waiting){
+   closeModal();stage=3;
+   add('密码正确。<br>government_archive.enc 已解密。<br><br>档案标题：<b>PROJECT N-17 / FIRST CONTACT</b><br>备注：<span class="glitch">“不要让N-17知道我们已经发现它。”</span>','secret');
+   add('解密日志最后一行只有一句话：<br><b>“如果有人正在阅读这里，那么它已经开始模仿我们了。”</b>','system');
+   unlock();
+ }else{
+   document.getElementById('modalText').innerHTML+=' <br><span style="color:#e18b8b">密码错误。</span>';
+ }
+}
+cmd.addEventListener('keydown',e=>{if(e.key==='Enter')run()});
+progress();
+</script>
+
+<script>
+/* Mobile UX: keep the newest message visible and avoid keyboard viewport jumps. */
+(function(){
+  const input=document.getElementById('cmd');
+  const screen=document.getElementById('screen');
+  input.addEventListener('focus',()=>setTimeout(()=>screen.scrollTop=screen.scrollHeight,250));
+  window.addEventListener('resize',()=>setTimeout(()=>screen.scrollTop=screen.scrollHeight,80));
+})();
+</script>
+
+</body>
+</html>
